@@ -1,45 +1,36 @@
 import md5 from 'md5';
+import {useHttp} from "../hooks/http.hook";
 
-class MarvelService {
+const useMarvelService =()=>{
 
-    _apiBase = 'https://gateway.marvel.com:443/v1/public/';
-    _apiKey = 'apikey=f082f7c5ad1632759475034c6d389144';
-    _baseOffset = 210;
+    const _apiBase = 'https://gateway.marvel.com:443/v1/public/';
+    const _apiKey = 'apikey=f082f7c5ad1632759475034c6d389144';
+    const _baseOffset = 210;
 
-    ts = new Date().getTime();
-    privateKey = 'f0c4ece9e4cd950ae6ff5207e7a3c04d5a25ea33';
-    publicKey = 'f082f7c5ad1632759475034c6d389144';
-    hash = md5(this.ts + this.privateKey + this.publicKey);
+    const ts = new Date().getTime();
+    const privateKey = 'f0c4ece9e4cd950ae6ff5207e7a3c04d5a25ea33';
+    const publicKey = 'f082f7c5ad1632759475034c6d389144';
+    const hash = md5(ts + privateKey + publicKey);
 
+    const {loading,request,error, clearError}=useHttp();
 
-    getResource = async (url) => {
-
-        let res = await fetch(url);
-
-        if (!res.ok) {
-            throw new Error(`could not fetch ${url}, status: ${res.status}`);
-        }
-
-        return await res.json();
+    const getAllCharacters = async (offset = _baseOffset) => {
+        const res = await request(`${_apiBase}characters?limit=9&offset=${offset}&ts=${ts}&apikey=${publicKey}&hash=${hash}`);
+        return res.data.results.map(_transformCharacter);
     }
 
-    getAllCharacters = async (offset = this._baseOffset) => {
-        const res = await this.getResource(`${this._apiBase}characters?limit=9&offset=${offset}&ts=${this.ts}&apikey=${this.publicKey}&hash=${this.hash}`);
-        return res.data.results.map(this._transformCharacter);
-    }
-
-    getCharacter = async (id) => {
+    const getCharacter = async (id) => {
         try {
 
-            const res = await this.getResource(`${this._apiBase}characters/${id}?ts=${this.ts}&apikey=${this.publicKey}&hash=${this.hash}`);
+            const res = await request(`${_apiBase}characters/${id}?ts=${ts}&apikey=${publicKey}&hash=${hash}`);
 
-            return this._transformCharacter(res.data.results[0]);
+            return _transformCharacter(res.data.results[0]);
         } catch (e) {
-            console.log('ошобка: ' + e)
+            console.log('ошибка: ' + e)
         }
     }
 
-    _transformCharacter = (char) => {
+    const _transformCharacter = (char) => {
         return {
             id: char.id,
             name: char.name,
@@ -50,6 +41,8 @@ class MarvelService {
             comics: char.comics.items
         }
     }
+
+    return {loading, error, clearError, getAllCharacters, getCharacter}
 }
 
-export default MarvelService;
+export default useMarvelService;
