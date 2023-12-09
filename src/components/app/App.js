@@ -38,5 +38,5 @@ const App = () => {
 
 }
 
-const ddd = "";
+
 export default App;
